@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'polls-api'
+    static_configs:
+      - targets: ['polls-api:8080']
+
+  - job_name: 'results-api'
+    static_configs:
+      - targets: ['results-api:8080']
+
+  - job_name: 'gateway-api'
+    static_configs:
+      - targets: ['gateway-api:8080']
+
+  - job_name: 'vote-processor'
+    static_configs:
+      - targets: ['vote-processor:8080']

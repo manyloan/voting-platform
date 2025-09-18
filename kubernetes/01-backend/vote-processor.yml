@@ -1,0 +1,31 @@
+# kubernetes/01-backend/vote-processor.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: vote-processor
+spec:
+  selector:
+    app: vote-processor
+  ports:
+    - port: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote-processor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vote-processor
+  template:
+    metadata:
+      labels:
+        app: vote-processor
+    spec:
+      containers:
+        - name: vote-processor
+          image: vote-processor:k8s
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080

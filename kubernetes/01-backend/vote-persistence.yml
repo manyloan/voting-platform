@@ -1,0 +1,35 @@
+# kubernetes/01-backend/vote-persistence.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: vote-persistence
+spec:
+  selector:
+    app: vote-persistence
+  ports:
+    - port: 8080 # Porta simbólica, já que ele não é um serviço HTTP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote-persistence
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vote-persistence
+  template:
+    metadata:
+      labels:
+        app: vote-persistence
+    spec:
+      containers:
+        - name: vote-persistence
+          image: vote-persistence:k8s
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-config
+                  key: DATABASE_URL

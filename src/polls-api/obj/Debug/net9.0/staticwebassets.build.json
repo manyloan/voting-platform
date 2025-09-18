@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "PmZa8LrhaxqiOr2UZO6rgMCpFfAd3qHB7BQKoyZsiA8=",
+  "Source": "Polls.API",
+  "BasePath": "_content/Polls.API",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}

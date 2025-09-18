@@ -1,0 +1,42 @@
+# kubernetes/01-backend/results-api.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: results-api
+spec:
+  selector:
+    app: results-api
+  ports:
+    - port: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: results-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: results-api
+  template:
+    metadata:
+      labels:
+        app: results-api
+    spec:
+      containers:
+        - name: results-api
+          image: results-api:k8s
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ConnectionStrings__RabbitMQ
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-config
+                  key: ConnectionStrings__RabbitMQ
+            - name: ConnectionStrings__Redis
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-config
+                  key: ConnectionStrings__Redis

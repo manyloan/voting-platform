@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Resultados da Votação em Tempo Real</title>
+    <style>
+        body { font-family: sans-serif; }
+        #results { border: 1px solid #ccc; padding: 10px; min-height: 100px; }
+    </style>
+</head>
+<body>
+    <h1>Resultados da Votação</h1>
+    <div>
+        <label for="pollId">Cole o ID da Enquete aqui:</label>
+        <input type="text" id="pollId" size="40" />
+        <button id="connectButton">Conectar</button>
+    </div>
+    <hr />
+    <h3>Resultados ao vivo:</h3>
+    <pre id="results">Aguardando conexão...</pre>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+
+    <script>
+        const connectButton = document.getElementById('connectButton');
+        const pollIdInput = document.getElementById('pollId');
+        const resultsDiv = document.getElementById('results');
+
+        let connection = null;
+
+        connectButton.addEventListener('click', () => {
+            const pollId = pollIdInput.value;
+            if (!pollId) {
+                alert('Por favor, insira um ID de enquete.');
+                return;
+            }
+
+            if (connection) {
+                connection.stop();
+            }
+
+            resultsDiv.textContent = 'Conectando...';
+
+            // Constrói a conexão com o Hub
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl("http://localhost:8083/results-hub")
+                .build();
+
+            // Define o que fazer quando receber a mensagem "UpdateResults" do servidor
+            connection.on("UpdateResults", (updatedResults) => {
+                resultsDiv.textContent = JSON.stringify(updatedResults, null, 2);
+            });
+
+            // Inicia a conexão e se inscreve no grupo da enquete
+            connection.start()
+                .then(() => {
+                    resultsDiv.textContent = 'Conectado! Aguardando votos...';
+                    // Chama o método no servidor para entrar no grupo
+                    connection.invoke("JoinPollGroup", pollId);
+                })
+                .catch(err => {
+                    console.error(err.toString());
+                    resultsDiv.textContent = 'Erro de conexão.';
+                });
+        });
+    </script>
+</body>
+</html>

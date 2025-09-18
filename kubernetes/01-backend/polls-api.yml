@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: polls-api
+spec:
+  selector:
+    app: polls-api
+  ports:
+    - port: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: polls-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: polls-api
+  template:
+    metadata:
+      labels:
+        app: polls-api
+    spec:
+      containers:
+        - name: polls-api
+          image: polls-api:k8s
+          imagePullPolicy: IfNotPresent # Diz ao K8s para usar a imagem local
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ConnectionStrings__DefaultConnection
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-config
+                  key: ConnectionStrings__DefaultConnection
