@@ -42,7 +42,7 @@
 
             // Constrói a conexão com o Hub
             connection = new signalR.HubConnectionBuilder()
-                .withUrl("http://localhost:8083/results-hub")
+                .withUrl("http://localhost:30080/api/results-hub")
                 .build();
 
             // Define o que fazer quando receber a mensagem "UpdateResults" do servidor

@@ -74,7 +74,7 @@ app.MapGet("/results/{pollId}", async (string pollId, IConnectionMultiplexer red
     return Microsoft.AspNetCore.Http.Results.Ok(results);
 });
 
-app.MapHub<ResultsHub>("/results-hub");
+app.MapHub<ResultsHub>("/api/results-hub");
 
 app.MapMetrics();
 

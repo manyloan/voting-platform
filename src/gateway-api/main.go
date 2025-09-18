@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rs/cors"
 )
 
-// newReverseProxy cria um novo reverse proxy para um serviço de destino.
 func newReverseProxy(target string) (*httputil.ReverseProxy, error) {
 	url, err := url.Parse(target)
 	if err != nil {
@@ -21,56 +21,50 @@ func newReverseProxy(target string) (*httputil.ReverseProxy, error) {
 }
 
 func main() {
-	// Cria os proxies para cada um dos nossos serviços internos
-	pollsProxy, err := newReverseProxy("http://polls-api:8080")
-	if err != nil {
-		log.Fatal(err)
-	}
+	pollsProxy, _ := newReverseProxy("http://polls-api:8080")
+	voteProxy, _ := newReverseProxy("http://vote-processor:8080")
+	resultsProxy, _ := newReverseProxy("http://results-api:8080")
 
-	voteProxy, err := newReverseProxy("http://vote-processor:8080")
-	if err != nil {
-		log.Fatal(err)
-	}
+	router := http.NewServeMux()
 
-	resultsProxy, err := newReverseProxy("http://results-api:8080")
-	if err != nil {
-		log.Fatal(err)
-	}
+	router.Handle("/metrics", promhttp.Handler())
+	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 
-	// O handler principal que vai rotear o tráfego
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Recebida requisição: %s %s", r.Method, r.URL.Path)
 
-		// Roteia baseado no prefixo da URL
-		if strings.HasPrefix(r.URL.Path, "/api/polls") {
-			// Remove o prefixo /api para que o serviço de destino receba o caminho correto
+		if strings.HasPrefix(r.URL.Path, "/api/polls") || strings.HasPrefix(r.URL.Path, "/polls") {
 			r.URL.Path = strings.TrimPrefix(r.URL.Path, "/api")
 			pollsProxy.ServeHTTP(w, r)
 			return
 		}
 
-		if strings.HasPrefix(r.URL.Path, "/api/votes") {
+		if strings.HasPrefix(r.URL.Path, "/api/votes") || strings.HasPrefix(r.URL.Path, "/votes") {
 			r.URL.Path = strings.TrimPrefix(r.URL.Path, "/api")
 			voteProxy.ServeHTTP(w, r)
 			return
 		}
 
-		if strings.HasPrefix(r.URL.Path, "/api/results") {
+		if strings.HasPrefix(r.URL.Path, "/api/results-hub") || strings.HasPrefix(r.URL.Path, "/api/results") {
 			r.URL.Path = strings.TrimPrefix(r.URL.Path, "/api")
 			resultsProxy.ServeHTTP(w, r)
 			return
 		}
 
-		// Responde com 404 Not Found se nenhuma rota corresponder
 		http.NotFound(w, r)
 	})
 
-	// Mantém os endpoints de health e metrics
-	http.Handle("/metrics", promhttp.Handler())
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
+	corsHandler := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:30000"},
+		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders:   []string{"*"},
+		AllowCredentials: true,
 	})
 
-	log.Println("API Gateway iniciado na porta 8080, roteando tráfego...")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	handler := corsHandler.Handler(router)
+
+	log.Println("API Gateway iniciado na porta 8080, com CORS ativado para localhost:30000...")
+	log.Fatal(http.ListenAndServe(":8080", handler))
 }
